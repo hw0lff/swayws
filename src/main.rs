@@ -1,4 +1,3 @@
-use colored::*;
 use structopt::StructOpt;
 use swayipc::reply::Workspace;
 use swayipc::Connection;
@@ -25,6 +24,7 @@ enum Command {
     },
     /// Lists infos about sway
     List {
+        // todo: add options to list first and last entry
         /// List outputs
         #[structopt(short = "o", long)]
         outputs: bool,
@@ -95,6 +95,10 @@ fn main() -> Result<(), swayipc::Error> {
     }
 
     match opt.cmd {
+        Command::Focus { workspace } => {
+            cmd_focus(&mut connection, &workspace);
+            focus_saved_workspace = false;
+        }
         Command::Move {
             away,
             focus,
@@ -119,10 +123,6 @@ fn main() -> Result<(), swayipc::Error> {
             outputs,
         } => {
             cmd_list(&mut connection, outputs, workspaces);
-        }
-        Command::Focus { workspace } => {
-            cmd_focus(&mut connection, &workspace);
-            focus_saved_workspace = false;
         }
     }
 
