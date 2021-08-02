@@ -7,9 +7,9 @@ use swayipc::Connection;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "swayws")]
 struct SwayWs {
-    /// Enable debug mode
-    #[structopt(short, long)]
-    debug: bool,
+    /// Use verbose output
+    #[structopt(short, parse(from_occurrences))]
+    verbose: u8,
 
     #[structopt(subcommand)]
     cmd: Command,
@@ -38,7 +38,7 @@ enum Command {
         /// Moves workspace to output that does not match the specified output name
         #[structopt(short, long)]
         away: bool,
-        /// Focuses specified output
+        /// Focuses specified workspace
         #[structopt(short, long)]
         focus: bool,
 
@@ -79,8 +79,8 @@ fn main() -> Result<(), swayipc::Error> {
     // println!("{:?}", opt);
 
     let mut connection = Connection::new()?;
-    let sway_version = connection.get_version().unwrap();
-    println!("Sway version: {}", sway_version.human_readable);
+    // let sway_version = connection.get_version().unwrap();
+    // println!("Sway version: {}", sway_version.human_readable);
 
     let workspaces = connection.get_workspaces().unwrap();
 
@@ -224,37 +224,25 @@ fn cmd_move(connection: &mut Connection, output_name: &str, workspace: &str, awa
 }
 
 fn cmd_range(connection: &mut Connection, output_name: &str, start: &str, end: &str, away: &bool) {
-    let mut start_num: Option<i32> = None;
-    let mut end_num: Option<i32> = None;
+    let mut ws_list: Vec<String> = vec![];
+    let mut fill_ws_list: bool = false;
 
+    // collect workspaces between start and end in a vector
     let workspaces: Vec<Workspace> = connection.get_workspaces().unwrap();
     for ws in workspaces.into_iter() {
-        // todo: prefer ws.num over ws.name
         if start.cmp(&ws.name).is_eq() {
-            start_num = Some(ws.num);
+            fill_ws_list = true;
+        }
+        if fill_ws_list {
+            ws_list.push(ws.name.clone());
         }
         if end.cmp(&ws.name).is_eq() {
-            end_num = Some(ws.num);
+            fill_ws_list = false;
         }
     }
 
-    match (start_num, end_num) {
-        (Some(_a), Some(_b)) => {}
-        (Some(a), None) => end_num = Some(a),
-        (None, Some(b)) => start_num = Some(b),
-        (None, None) => {
-            println!("not a valid input");
-            return;
-        }
-    }
-
-    let workspaces: Vec<Workspace> = connection.get_workspaces().unwrap();
-    for ws in workspaces.into_iter() {
-        if (ws.num >= start_num.unwrap() && ws.num <= end_num.unwrap())
-            || (ws.num <= start_num.unwrap() && ws.num >= end_num.unwrap())
-        {
-            cmd_move(connection, &output_name, &ws.name, &away);
-        }
+    for ws in ws_list.into_iter() {
+        cmd_move(connection, &output_name, &ws, &away);
     }
 }
 
