@@ -158,7 +158,7 @@ fn move_workspace_to_output(connection: &mut Connection, workspace_name: &str, o
 }
 
 fn send_ipc_command(connection: &mut Connection, command_text: &str) {
-    println!("swayipc-send command: >{}<", &command_text);
+    // println!("swayipc-send command: >{}<", &command_text);
     for outcome in connection.run_command(&command_text).unwrap() {
         if outcome.success {
             // println!("swayipc-send: success");
