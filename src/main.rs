@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use structopt::StructOpt;
 use swayipc::reply::Workspace;
 use swayipc::Connection;
@@ -42,7 +43,7 @@ enum Command {
         #[structopt(short, long)]
         focus: bool,
 
-        /// Workspace to move to the other monitor
+        /// Workspace to move
         #[structopt()]
         workspace: String,
 
@@ -55,6 +56,10 @@ enum Command {
         /// Moves workspace to output that does not match the specified output name
         #[structopt(short, long)]
         away: bool,
+
+        /// Assumes <start> and <end> are numbers and binds all workspaces in between them to the specified output
+        #[structopt(short, long)]
+        numeric: bool,
 
         /// First workspace in range
         #[structopt()]
@@ -112,11 +117,12 @@ fn main() -> Result<(), swayipc::Error> {
         }
         Command::Range {
             away,
+            numeric,
             start,
             end,
             output,
         } => {
-            cmd_range(&mut connection, &output, &start, &end, &away);
+            cmd_range(&mut connection, &output, &start, &end, &away, &numeric);
         }
         Command::List {
             workspaces,
@@ -152,7 +158,7 @@ fn move_workspace_to_output(connection: &mut Connection, workspace_name: &str, o
 }
 
 fn send_ipc_command(connection: &mut Connection, command_text: &str) {
-    // println!("swayipc-send command: >{}<", &command_text);
+    println!("swayipc-send command: >{}<", &command_text);
     for outcome in connection.run_command(&command_text).unwrap() {
         if outcome.success {
             // println!("swayipc-send: success");
@@ -223,7 +229,37 @@ fn cmd_move(connection: &mut Connection, output_name: &str, workspace: &str, awa
     }
 }
 
-fn cmd_range(connection: &mut Connection, output_name: &str, start: &str, end: &str, away: &bool) {
+fn cmd_range(
+    connection: &mut Connection,
+    output_name: &str,
+    start: &str,
+    end: &str,
+    away: &bool,
+    numeric: &bool,
+) {
+    if *numeric {
+        let start_i: i32 = match i32::from_str(start) {
+            Ok(num) => num,
+            Err(e) => {
+                eprintln!("Error parsing input: {}", e);
+                return;
+            }
+        };
+        let end_i: i32 = match i32::from_str(end) {
+            Ok(num) => num,
+            Err(e) => {
+                eprintln!("Error parsing input: {}", e);
+                return;
+            }
+        };
+
+        for i in start_i..=end_i {
+            cmd_move(connection, output_name, &i.to_string(), away);
+        }
+
+        return;
+    }
+
     let mut ws_list: Vec<String> = vec![];
     let mut fill_ws_list: bool = false;
 
@@ -242,7 +278,7 @@ fn cmd_range(connection: &mut Connection, output_name: &str, start: &str, end: &
     }
 
     for ws in ws_list.into_iter() {
-        cmd_move(connection, &output_name, &ws, &away);
+        cmd_move(connection, output_name, &ws, away);
     }
 }
 
