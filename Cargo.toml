@@ -1,19 +1,13 @@
 [package]
 name = "swayws"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2018"
 license = "MIT"
 description = "Sway workspace tool which allows easy moving of workspaces to and from outputs"
-homepage = "https://gitlab.com/w0lff/swayws"
 repository = "https://gitlab.com/w0lff/swayws"
-documentation = "https://docs.rs/swayws"
 exclude = [
     ".idea/*",
 ]
-
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 structopt = "0.3.22"

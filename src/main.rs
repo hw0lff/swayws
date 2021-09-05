@@ -39,6 +39,10 @@ enum Command {
         /// Moves workspace to output that does not match the specified output name
         #[structopt(short, long)]
         away: bool,
+        /// Excludes outputs to move workspace to,
+        /// has to be used with --away
+        #[structopt(long, requires("away"))]
+        not: Option<Vec<String>>,
         /// Focuses specified workspace
         #[structopt(short, long)]
         focus: bool,
@@ -56,6 +60,10 @@ enum Command {
         /// Moves workspace to output that does not match the specified output name
         #[structopt(short, long)]
         away: bool,
+        /// Excludes outputs to move workspace to,
+        /// has to be used with --away
+        #[structopt(long, requires("away"))]
+        not: Option<Vec<String>>,
 
         /// Assumes <start> and <end> are numbers and binds all workspaces in between them to the specified output
         #[structopt(short, long)]
@@ -106,23 +114,25 @@ fn main() -> Result<(), swayipc::Error> {
         }
         Command::Move {
             away,
+            not,
             focus,
             workspace,
             output,
         } => {
-            cmd_move(&mut connection, &output, &workspace, &away);
+            cmd_move(&mut connection, &output, &workspace, &away, not);
             if focus {
                 focus_saved_workspace = false;
             }
         }
         Command::Range {
             away,
+            not,
             numeric,
             start,
             end,
             output,
         } => {
-            cmd_range(&mut connection, &output, &start, &end, &away, &numeric);
+            cmd_range(&mut connection, &output, &start, &end, &away, &numeric, not);
         }
         Command::List {
             workspaces,
@@ -219,9 +229,19 @@ fn cmd_list(connection: &mut Connection, outputs: bool, workspaces: bool) {
     }
 }
 
-fn cmd_move(connection: &mut Connection, output_name: &str, workspace: &str, away: &bool) {
+fn cmd_move(connection: &mut Connection, output_name: &str, workspace: &str, away: &bool, not: Option<Vec<String>>) {
     if *away {
-        let second_output = get_second_output(connection, output_name).unwrap();
+        let second_output = match not {
+            None =>{
+
+        get_second_output(connection, &[output_name.into()]).unwrap()},
+            Some(mut not_list) => {
+                let mut list = vec![output_name.into()];
+                list.append(&mut not_list);
+
+                get_second_output(connection, &list).unwrap()
+            }
+    };
         // println!("{:?}", second_output);
         move_workspace_to_output(connection, workspace, &second_output.name);
     } else {
@@ -236,6 +256,7 @@ fn cmd_range(
     end: &str,
     away: &bool,
     numeric: &bool,
+    not: Option<Vec<String>>
 ) {
     if *numeric {
         let start_i: i32 = match i32::from_str(start) {
@@ -254,7 +275,7 @@ fn cmd_range(
         };
 
         for i in start_i..=end_i {
-            cmd_move(connection, output_name, &i.to_string(), away);
+            cmd_move(connection, output_name, &i.to_string(), away, not.clone());
         }
 
         return;
@@ -278,13 +299,13 @@ fn cmd_range(
     }
 
     for ws in ws_list.into_iter() {
-        cmd_move(connection, output_name, &ws, away);
+        cmd_move(connection, output_name, &ws, away, not.clone());
     }
 }
 
 fn get_second_output(
     connection: &mut Connection,
-    output_name: &str,
+    output_names: &[String],
 ) -> Option<swayipc::reply::Output> {
     let outputs = connection.get_outputs().ok()?;
     if outputs.len() == 1 {
@@ -292,9 +313,19 @@ fn get_second_output(
     }
     for monitor in outputs.into_iter() {
         // println!("{}", monitor.name);
-        if monitor.name != output_name {
+
+        if is_not_in_list(monitor.name.clone(), output_names) {
             return Some(monitor);
         }
     }
     None
+}
+
+fn is_not_in_list<V: Eq>(v: V, list: &[V]) -> bool {
+    for value in list.iter() {
+        if *value == v {
+            return false
+        }
+    }
+    true
 }
