@@ -225,19 +225,23 @@ fn cmd_list(connection: &mut Connection, outputs: bool, workspaces: bool) {
     }
 }
 
-fn cmd_move(connection: &mut Connection, output_name: &str, workspace: &str, away: &bool, not: Option<Vec<String>>) {
+fn cmd_move(
+    connection: &mut Connection,
+    output_name: &str,
+    workspace: &str,
+    away: &bool,
+    not: Option<Vec<String>>,
+) {
     if *away {
         let second_output = match not {
-            None =>{
-
-        get_second_output(connection, &[output_name.into()]).unwrap()},
+            None => get_second_output(connection, &[output_name.into()]).unwrap(),
             Some(mut not_list) => {
                 let mut list = vec![output_name.into()];
                 list.append(&mut not_list);
 
                 get_second_output(connection, &list).unwrap()
             }
-    };
+        };
         // println!("{:?}", second_output);
         move_workspace_to_output(connection, workspace, &second_output.name);
     } else {
@@ -252,7 +256,7 @@ fn cmd_range(
     end: &str,
     away: &bool,
     numeric: &bool,
-    not: Option<Vec<String>>
+    not: Option<Vec<String>>,
 ) {
     if *numeric {
         let start_i: i32 = match i32::from_str(start) {
@@ -320,7 +324,7 @@ fn get_second_output(
 fn is_not_in_list<V: Eq>(v: V, list: &[V]) -> bool {
     for value in list.iter() {
         if *value == v {
-            return false
+            return false;
         }
     }
     true
