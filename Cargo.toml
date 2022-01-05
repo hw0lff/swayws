@@ -10,5 +10,5 @@ exclude = [
 ]
 
 [dependencies]
-structopt = "0.3.22"
+clap = { version = "3.0.4", features = ["derive"] }
 swayipc = "2.7.2"

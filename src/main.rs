@@ -1,22 +1,23 @@
 use std::str::FromStr;
-use structopt::StructOpt;
+
+use clap::{Parser, Subcommand};
 use swayipc::reply::Workspace;
 use swayipc::Connection;
 
 /// Sway Workspace
 /// - operates on sway workspaces
-#[derive(Debug, StructOpt)]
-#[structopt(name = "swayws")]
+#[derive(Debug, Parser)]
+#[clap(name = "swayws", version)]
 struct SwayWs {
     /// Use verbose output
-    #[structopt(short, parse(from_occurrences))]
+    #[clap(short, parse(from_occurrences))]
     verbose: u8,
 
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     cmd: Command,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 enum Command {
     /// Focus a workspace
     Focus {
@@ -27,57 +28,52 @@ enum Command {
     List {
         // todo: add options to list first and last entry
         /// List outputs
-        #[structopt(short = "o", long)]
+        #[clap(short, long)]
         outputs: bool,
 
         /// List workspaces
-        #[structopt(short = "ws", long)]
+        #[clap(short, long)]
         workspaces: bool,
     },
     /// Moves a workspace to a specified output
     Move {
         /// Moves workspace to output that does not match the specified output name
-        #[structopt(short, long)]
+        #[clap(short, long)]
         away: bool,
         /// Excludes outputs to move workspace to,
         /// has to be used with --away
-        #[structopt(long, requires("away"))]
+        #[clap(long, requires("away"))]
         not: Option<Vec<String>>,
         /// Focuses specified workspace
-        #[structopt(short, long)]
+        #[clap(short, long)]
         focus: bool,
 
         /// Workspace to move
-        #[structopt()]
         workspace: String,
 
         /// Name of the output
-        #[structopt()]
         output: String,
     },
     /// Moves a range of workspaces to a specified output
     Range {
         /// Moves workspace to output that does not match the specified output name
-        #[structopt(short, long)]
+        #[clap(short, long)]
         away: bool,
         /// Excludes outputs to move workspace to,
         /// has to be used with --away
-        #[structopt(long, requires("away"))]
+        #[clap(long, requires("away"))]
         not: Option<Vec<String>>,
 
         /// Assumes <start> and <end> are numbers and binds all workspaces in between them to the specified output
-        #[structopt(short, long)]
+        #[clap(short, long)]
         numeric: bool,
 
         /// First workspace in range
-        #[structopt()]
         start: String,
         /// Last workspace in range
-        #[structopt()]
         end: String,
 
         /// Name of the output
-        #[structopt()]
         output: String,
     },
 }
@@ -88,7 +84,7 @@ fn main() -> Result<(), swayipc::Error> {
     //     Err(sway_ipc_error) => panic!("{:?}", sway_ipc_error),
     // };
 
-    let opt: SwayWs = SwayWs::from_args();
+    let opt: SwayWs = SwayWs::parse();
     // println!("{:?}", opt);
 
     let mut connection = Connection::new()?;
