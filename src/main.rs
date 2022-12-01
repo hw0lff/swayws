@@ -1,8 +1,11 @@
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
-use swayipc::reply::Workspace;
 use swayipc::Connection;
+use swayipc::Workspace;
+
+mod error;
+use error::SwayWsError;
 
 /// Sway Workspace
 /// - operates on sway workspaces
@@ -74,17 +77,20 @@ enum Command {
     },
 }
 
-fn main() -> Result<(), swayipc::Error> {
-    // let mut connection = match Connection::new() {
-    //     Ok(connection) => connection,
-    //     Err(sway_ipc_error) => panic!("{:?}", sway_ipc_error),
-    // };
+fn main() {
+    env_logger::builder().format_timestamp(None).init();
 
+    if let Err(err) = run() {
+        log::error!("{}", err);
+    }
+}
+
+fn run() -> Result<(), SwayWsError> {
     let opt: SwayWs = SwayWs::parse();
 
     let mut connection = Connection::new()?;
 
-    let workspaces = connection.get_workspaces().unwrap();
+    let workspaces = connection.get_workspaces()?;
 
     let mut current_workspace: Option<String> = None;
     let mut focus_saved_workspace: bool = true;
@@ -97,7 +103,7 @@ fn main() -> Result<(), swayipc::Error> {
 
     match opt.cmd {
         Command::Focus { workspace } => {
-            cmd_focus(&mut connection, &workspace);
+            cmd_focus(&mut connection, &workspace)?;
             focus_saved_workspace = false;
         }
         Command::Move {
@@ -107,7 +113,7 @@ fn main() -> Result<(), swayipc::Error> {
             workspace,
             output,
         } => {
-            cmd_move(&mut connection, &output, &workspace, &away, not);
+            cmd_move(&mut connection, &output, &workspace, &away, &not)?;
             if focus {
                 focus_saved_workspace = false;
             }
@@ -119,101 +125,97 @@ fn main() -> Result<(), swayipc::Error> {
             start,
             end,
             output,
-        } => {
-            cmd_range(&mut connection, &output, &start, &end, &away, &numeric, not);
-        }
+        } => cmd_range(&mut connection, &output, &start, &end, &away, &numeric, not)?,
         Command::List {
             workspaces,
             outputs,
         } => {
-            cmd_list(&mut connection, outputs, workspaces);
+            cmd_list(&mut connection, outputs, workspaces)?;
         }
     }
 
     if let Some(next_workspace) = current_workspace {
         if focus_saved_workspace {
-            focus_workspace(&mut connection, &next_workspace);
+            focus_workspace(&mut connection, &next_workspace)?;
         }
     }
 
     Ok(())
 }
 
-fn focus_workspace(connection: &mut Connection, workspace_name: &str) {
+fn focus_workspace(connection: &mut Connection, workspace_name: &str) -> Result<(), SwayWsError> {
     let command_text = format!("workspace {}", workspace_name);
-    send_ipc_command(connection, &command_text);
+    send_ipc_command(connection, &command_text)
 }
 
-fn move_workspace_to_output(connection: &mut Connection, workspace_name: &str, output_name: &str) {
+fn move_workspace_to_output(
+    connection: &mut Connection,
+    workspace_name: &str,
+    output_name: &str,
+) -> Result<(), SwayWsError> {
     let command_text = format!(
         "workspace {0} output {1},\
         workspace {0},\
         move workspace to {1}",
         workspace_name, output_name
     );
-    send_ipc_command(connection, &command_text);
+    send_ipc_command(connection, &command_text)
 }
 
-fn send_ipc_command(connection: &mut Connection, command_text: &str) {
-    // println!("swayipc-send command: >{}<", &command_text);
-    for outcome in connection.run_command(&command_text).unwrap() {
-        if outcome.success {
-            // println!("swayipc-send: success");
-        } else {
-            // println!("swayipc-send: failure '{}'", outcome.error.unwrap());
-        }
-    }
+fn send_ipc_command(connection: &mut Connection, command_text: &str) -> Result<(), SwayWsError> {
+    let outcomes: Result<(), swayipc::Error> =
+        connection.run_command(command_text)?.into_iter().collect();
+    Ok(outcomes?)
 }
 
-fn cmd_focus(connection: &mut Connection, workspace: &str) {
-    focus_workspace(connection, workspace);
+fn cmd_focus(connection: &mut Connection, workspace: &str) -> Result<(), SwayWsError> {
+    focus_workspace(connection, workspace)
 }
 
-fn cmd_list(connection: &mut Connection, outputs: bool, workspaces: bool) {
-    // println!(
-    //     "{}",
-    //     format!(
-    //         "Sway version: {}\noutputs_flag:{}\nworkspaces_flag:{}",
-    //         connection.get_version().unwrap().human_readable,
-    //         outputs,
-    //         workspaces
-    //     )
-    //     .yellow()
-    // );
-
-    fn print_outputs(connection: &mut Connection) {
-        let outputs = connection.get_outputs().unwrap();
+fn cmd_list(
+    connection: &mut Connection,
+    outputs: bool,
+    workspaces: bool,
+) -> Result<(), SwayWsError> {
+    fn print_outputs(connection: &mut Connection) -> Result<(), SwayWsError> {
+        let outputs = connection.get_outputs()?;
         println!("Outputs (name):");
         for monitor in outputs.into_iter() {
             println!("{}", monitor.name);
         }
+        Ok(())
     }
 
-    fn print_workspaces(connection: &mut Connection) {
-        let workspaces: Vec<Workspace> = connection.get_workspaces().unwrap();
+    fn print_workspaces(connection: &mut Connection) -> Result<(), SwayWsError> {
+        let workspaces: Vec<Workspace> = connection.get_workspaces()?;
         println!("Workspaces (id, name):");
-        let fill = workspaces.last().unwrap().num.to_string().len();
+        let fill = match workspaces.last() {
+            Some(ws) => ws.num.to_string().len(),
+            None => 1,
+        };
         for ws in workspaces.into_iter() {
             println!("{0:>width$} {1:>width$}", ws.num, ws.name, width = fill);
         }
+        Ok(())
     }
 
     match (outputs, workspaces) {
         (false, false) => {
-            print_outputs(connection);
-            print_workspaces(connection);
+            print_outputs(connection)?;
+            print_workspaces(connection)?;
         }
         (false, true) => {
-            print_workspaces(connection);
+            print_workspaces(connection)?;
         }
         (true, false) => {
-            print_outputs(connection);
+            print_outputs(connection)?;
         }
         (true, true) => {
-            print_outputs(connection);
-            print_workspaces(connection);
+            print_outputs(connection)?;
+            print_workspaces(connection)?;
         }
     }
+    Ok(())
 }
 
 fn cmd_move(
@@ -221,23 +223,23 @@ fn cmd_move(
     output_name: &str,
     workspace: &str,
     away: &bool,
-    not: Option<Vec<String>>,
-) {
+    not: &Option<Vec<String>>,
+) -> Result<(), SwayWsError> {
     if *away {
         let second_output = match not {
-            None => get_second_output(connection, &[output_name.into()]).unwrap(),
-            Some(mut not_list) => {
+            None => get_second_output(connection, &[output_name.into()])?,
+            Some(not_list) => {
                 let mut list = vec![output_name.into()];
-                list.append(&mut not_list);
+                list.append(&mut not_list.clone());
 
-                get_second_output(connection, &list).unwrap()
+                get_second_output(connection, &list)?
             }
         };
-        // println!("{:?}", second_output);
-        move_workspace_to_output(connection, workspace, &second_output.name);
+        move_workspace_to_output(connection, workspace, &second_output.name)?;
     } else {
-        move_workspace_to_output(connection, workspace, output_name);
+        move_workspace_to_output(connection, workspace, output_name)?;
     }
+    Ok(())
 }
 
 fn cmd_range(
@@ -248,35 +250,23 @@ fn cmd_range(
     away: &bool,
     numeric: &bool,
     not: Option<Vec<String>>,
-) {
+) -> Result<(), SwayWsError> {
     if *numeric {
-        let start_i: i32 = match i32::from_str(start) {
-            Ok(num) => num,
-            Err(e) => {
-                eprintln!("Error parsing input: {}", e);
-                return;
-            }
-        };
-        let end_i: i32 = match i32::from_str(end) {
-            Ok(num) => num,
-            Err(e) => {
-                eprintln!("Error parsing input: {}", e);
-                return;
-            }
-        };
+        let start_i: i32 = i32::from_str(start)?;
+        let end_i: i32 = i32::from_str(end)?;
 
         for i in start_i..=end_i {
-            cmd_move(connection, output_name, &i.to_string(), away, not.clone());
+            cmd_move(connection, output_name, &i.to_string(), away, &not)?;
         }
 
-        return;
+        return Ok(());
     }
 
     let mut ws_list: Vec<String> = vec![];
     let mut fill_ws_list: bool = false;
 
     // collect workspaces between start and end in a vector
-    let workspaces: Vec<Workspace> = connection.get_workspaces().unwrap();
+    let workspaces: Vec<Workspace> = connection.get_workspaces()?;
     for ws in workspaces.into_iter() {
         if start.cmp(&ws.name).is_eq() {
             fill_ws_list = true;
@@ -290,31 +280,28 @@ fn cmd_range(
     }
 
     for ws in ws_list.into_iter() {
-        cmd_move(connection, output_name, &ws, away, not.clone());
+        cmd_move(connection, output_name, &ws, away, &not)?;
     }
+    Ok(())
 }
 
 fn get_second_output(
     connection: &mut Connection,
     output_names: &[String],
-) -> Option<swayipc::reply::Output> {
-    let outputs = connection.get_outputs().ok()?;
+) -> Result<swayipc::Output, SwayWsError> {
+    let outputs = connection.get_outputs()?;
     if outputs.len() == 1 {
-        return None;
+        return Err(SwayWsError::NoOutputMatched);
     }
-    for monitor in outputs.into_iter() {
-        // println!("{}", monitor.name);
-
-        if is_not_in_list(monitor.name.clone(), output_names) {
-            return Some(monitor);
-        }
-    }
-    None
+    outputs
+        .into_iter()
+        .find(|monitor| is_not_in_list(&monitor.name, output_names))
+        .ok_or(SwayWsError::NoOutputMatched)
 }
 
-fn is_not_in_list<V: Eq>(v: V, list: &[V]) -> bool {
+fn is_not_in_list<V: Eq>(v: &V, list: &[V]) -> bool {
     for value in list.iter() {
-        if *value == v {
+        if *value == *v {
             return false;
         }
     }

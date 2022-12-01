@@ -5,10 +5,10 @@ edition = "2018"
 license = "MIT"
 description = "Sway workspace tool which allows easy moving of workspaces to and from outputs"
 repository = "https://gitlab.com/w0lff/swayws"
-exclude = [
-    ".idea/*",
-]
 
 [dependencies]
-clap = { version = "3.0.4", features = ["derive"] }
-swayipc = "2.7.2"
+clap = { version = "4.0", features = ["derive"] }
+env_logger = "0.10.0"
+log = "0.4.17"
+swayipc = "3.0"
+thiserror = "1.0.37"
