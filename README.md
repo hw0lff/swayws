@@ -47,7 +47,7 @@ Arguments:
 
 Options:
   -a, --away       Moves workspace to output that does not match the specified output name
-      --not <NOT>  Excludes outputs to move workspace to, has to be used with --away
+      --not <NOT>  Excludes outputs to move workspace to, must be used with --away
   -n, --numeric    Assumes <start> and <end> are numbers and binds all workspaces in between them to the specified output
 ```
 
