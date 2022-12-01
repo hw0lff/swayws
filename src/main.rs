@@ -45,7 +45,7 @@ enum Command {
         #[clap(short, long)]
         away: bool,
         /// Excludes outputs to move workspace to,
-        /// has to be used with --away
+        /// must be used with --away
         #[clap(long, requires("away"))]
         not: Option<Vec<String>>,
         /// Focuses specified workspace
@@ -65,7 +65,7 @@ enum Command {
         #[clap(short, long)]
         away: bool,
         /// Excludes outputs to move workspace to,
-        /// has to be used with --away
+        /// must be used with --away
         #[clap(long, requires("away"))]
         not: Option<Vec<String>>,
 
