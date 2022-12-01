@@ -48,7 +48,7 @@ enum Command {
         /// must be used with --away
         #[clap(long, requires("away"))]
         not: Option<Vec<String>>,
-        /// Focuses specified workspace
+        /// Focuses specified workspace after moving it
         #[clap(short, long)]
         focus: bool,
 
