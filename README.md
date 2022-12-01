@@ -15,7 +15,6 @@ Commands:
   list   Lists infos about sway
   move   Moves a workspace to a specified output
   range  Moves a range of workspaces to a specified output
-  help   Print this message or the help of the given subcommand(s)
 ```
 
 ### `swayws m[ove]`
