@@ -81,11 +81,8 @@ fn main() -> Result<(), swayipc::Error> {
     // };
 
     let opt: SwayWs = SwayWs::parse();
-    // println!("{:?}", opt);
 
     let mut connection = Connection::new()?;
-    // let sway_version = connection.get_version().unwrap();
-    // println!("Sway version: {}", sway_version.human_readable);
 
     let workspaces = connection.get_workspaces().unwrap();
 
@@ -93,7 +90,6 @@ fn main() -> Result<(), swayipc::Error> {
     let mut focus_saved_workspace: bool = true;
 
     for ws in workspaces.into_iter() {
-        // println!("{}: {}", ws.name, ws.focused);
         if ws.focused {
             current_workspace = Some(ws.name);
         }
@@ -135,7 +131,6 @@ fn main() -> Result<(), swayipc::Error> {
     }
 
     if let Some(next_workspace) = current_workspace {
-        // dbg!(focus_saved_workspace);
         if focus_saved_workspace {
             focus_workspace(&mut connection, &next_workspace);
         }
