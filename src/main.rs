@@ -9,8 +9,8 @@ mod util;
 use error::SwayWsError;
 use util::*;
 
-/// Sway Workspace
-/// - operates on sway workspaces
+/// SwayWs
+/// allows easy moving of workspaces to and from outputs
 #[derive(Debug, Parser)]
 #[clap(name = "swayws", version)]
 struct SwayWs {
