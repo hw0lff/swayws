@@ -19,11 +19,13 @@ struct SwayWs {
 #[derive(Debug, Subcommand)]
 enum Command {
     /// Focus a workspace
+    #[clap(alias = "f")]
     Focus {
         /// Workspace to focus
         workspace: String,
     },
     /// Lists infos about sway
+    #[clap(alias = "l")]
     List {
         // todo: add options to list first and last entry
         /// List outputs
@@ -35,6 +37,7 @@ enum Command {
         workspaces: bool,
     },
     /// Moves a workspace to a specified output
+    #[clap(alias = "m")]
     Move {
         /// Moves workspace to output that does not match the specified output name
         #[clap(short, long)]
@@ -54,6 +57,7 @@ enum Command {
         output: String,
     },
     /// Moves a range of workspaces to a specified output
+    #[clap(alias = "r")]
     Range {
         /// Moves workspace to output that does not match the specified output name
         #[clap(short, long)]
