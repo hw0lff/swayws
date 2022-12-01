@@ -203,21 +203,15 @@ fn cmd_list(
         Ok(())
     }
 
-    match (outputs, workspaces) {
-        (false, false) => {
-            print_outputs(connection)?;
-            print_workspaces(connection)?;
-        }
-        (false, true) => {
-            print_workspaces(connection)?;
-        }
-        (true, false) => {
-            print_outputs(connection)?;
-        }
-        (true, true) => {
-            print_outputs(connection)?;
-            print_workspaces(connection)?;
-        }
+    if outputs {
+        print_outputs(connection)?;
+    }
+    if workspaces {
+        print_workspaces(connection)?;
+    }
+    if !outputs && !workspaces {
+        print_outputs(connection)?;
+        print_workspaces(connection)?;
     }
     Ok(())
 }
