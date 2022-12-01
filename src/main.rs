@@ -9,10 +9,6 @@ use swayipc::Connection;
 #[derive(Debug, Parser)]
 #[clap(name = "swayws", version)]
 struct SwayWs {
-    /// Use verbose output
-    #[clap(short, parse(from_occurrences))]
-    verbose: u8,
-
     #[clap(subcommand)]
     cmd: Command,
 }
