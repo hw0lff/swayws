@@ -1,10 +1,12 @@
 [package]
 name = "swayws"
 version = "0.2.3"
-edition = "2018"
+authors = ["Hendrik Wolff <hendrik.wolff@agdsn.me>"]
 license = "MIT"
 description = "SwayWs allows easy moving of workspaces to and from outputs"
 repository = "https://gitlab.com/w0lff/swayws"
+edition = "2018"
+readme = "README.md"
 
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
