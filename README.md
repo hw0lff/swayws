@@ -3,6 +3,12 @@ A tool which allows easy moving of workspaces to and from outputs
 
 Developed for use with the [Sway](https://swaywm.org/) compositor
 
+## Features
+- Move numeric ranges of workspaces at once
+- When a moved workspace is focused, it will always be opened at the specified output
+- The focus is returned by default to the workspace that was focused before SwayWs was invoked
+- The previously visible workspaces are visible again by default after moving one or more workspaces
+
 ## Usage
 
 ```
