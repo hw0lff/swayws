@@ -98,19 +98,25 @@ fn run() -> Result<(), SwayWsError> {
 
     let workspaces = connection.get_workspaces()?;
 
-    let mut current_workspace: Option<String> = None;
-    let mut focus_saved_workspace: bool = true;
+    let mut previously_visible_workspaces: Vec<String> = vec![];
+    let mut previously_focused_workspace: Option<String> = None;
+    let mut restore_visible_workspaces: bool = true;
 
+    // Store the currently visible and focused workspaces
+    // Note: n > 0 workspaces can be visible but only 1 workspace can be focused
     for ws in workspaces.into_iter() {
+        if ws.visible {
+            previously_visible_workspaces.push(ws.name.clone());
+        }
         if ws.focused {
-            current_workspace = Some(ws.name);
+            previously_focused_workspace = Some(ws.name);
         }
     }
 
     match opt.cmd {
         Command::Focus { workspace } => {
             cmd_focus(&mut connection, &workspace)?;
-            focus_saved_workspace = false;
+            restore_visible_workspaces = false;
         }
         Command::Move {
             away,
@@ -121,7 +127,7 @@ fn run() -> Result<(), SwayWsError> {
         } => {
             cmd_move(&mut connection, &output, &workspace, &away, &not)?;
             if focus {
-                focus_saved_workspace = false;
+                restore_visible_workspaces = false;
             }
         }
         Command::Range {
@@ -140,9 +146,16 @@ fn run() -> Result<(), SwayWsError> {
         }
     }
 
-    if let Some(next_workspace) = current_workspace {
-        if focus_saved_workspace {
-            focus_workspace(&mut connection, &next_workspace)?;
+    // Make the same workspaces visible again that were visible before rearranging the
+    // workspace-to-output mapping and focus the previously focused workspace
+    if restore_visible_workspaces {
+        // First, visit all previously visible workspaces by focusing them
+        for ws_name in previously_visible_workspaces {
+            focus_workspace(&mut connection, &ws_name)?;
+        }
+        // At last, focus the saved workspace
+        if let Some(ws_name) = previously_focused_workspace {
+            focus_workspace(&mut connection, &ws_name)?;
         }
     }
 
