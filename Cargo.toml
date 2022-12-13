@@ -1,6 +1,6 @@
 [package]
 name = "swayws"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Hendrik Wolff <hendrik.wolff@agdsn.me>"]
 license = "MIT"
 description = "SwayWs allows easy moving of workspaces to and from outputs"
