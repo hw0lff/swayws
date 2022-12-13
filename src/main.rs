@@ -143,6 +143,7 @@ fn run() -> Result<(), SwayWsError> {
             outputs,
         } => {
             cmd_list(&mut connection, outputs, workspaces)?;
+            restore_visible_workspaces = false;
         }
     }
 
