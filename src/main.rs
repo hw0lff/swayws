@@ -81,6 +81,14 @@ enum Command {
         /// Name of the output
         output: String,
     },
+    /// Swaps two workspaces with each other
+    #[clap(alias = "s")]
+    Swap {
+        #[clap(value_name = "WORKSPACE", hide = true)]
+        ws_l: String,
+        #[clap(value_name = "WORKSPACE", hide = true)]
+        ws_r: String,
+    },
 }
 
 fn main() {
@@ -144,6 +152,9 @@ fn run() -> Result<(), SwayWsError> {
         } => {
             cmd_list(&mut connection, outputs, workspaces)?;
             restore_visible_workspaces = false;
+        }
+        Command::Swap { ws_l, ws_r } => {
+            cmd_swap(&mut connection, ws_l, ws_r)?;
         }
     }
 
@@ -249,5 +260,32 @@ fn cmd_range(
     for ws in ws_list.into_iter() {
         cmd_move(connection, output_name, &ws, away, &not)?;
     }
+    Ok(())
+}
+
+fn cmd_swap(connection: &mut Connection, ws_l: String, ws_r: String) -> Result<(), SwayWsError> {
+    let tmp = "swayws-swap";
+    let o_l = connection
+        .get_workspaces()?
+        .iter()
+        .find(|ws| ws.name == ws_l)
+        .cloned();
+    let o_r = connection
+        .get_workspaces()?
+        .iter()
+        .find(|ws| ws.name == ws_r)
+        .cloned();
+
+    rename_workspace(connection, &ws_l, tmp)?;
+    rename_workspace(connection, &ws_r, &ws_l)?;
+    rename_workspace(connection, tmp, &ws_r)?;
+
+    if let Some(o_l) = o_l {
+        move_workspace_to_output(connection, &ws_l, &o_l.output)?;
+    }
+    if let Some(o_r) = o_r {
+        move_workspace_to_output(connection, &ws_r, &o_r.output)?;
+    }
+
     Ok(())
 }

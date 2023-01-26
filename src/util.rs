@@ -25,6 +25,15 @@ pub fn move_workspace_to_output(
     send_ipc_command(connection, &command_text)
 }
 
+pub fn rename_workspace(
+    connection: &mut Connection,
+    from: &str,
+    to: &str,
+) -> Result<(), SwayWsError> {
+    let command_text = format!("rename workspace {from} to {to}");
+    send_ipc_command(connection, &command_text)
+}
+
 pub fn send_ipc_command(
     connection: &mut Connection,
     command_text: &str,
