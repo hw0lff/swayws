@@ -21,6 +21,7 @@ Commands:
   list   Lists infos about sway
   move   Moves a workspace to a specified output
   range  Moves a range of workspaces to a specified output
+  swap   Swaps two workspaces with each other
 ```
 
 ### `swayws m[ove]`
@@ -56,6 +57,13 @@ Options:
   -n, --numeric    Assumes <start> and <end> are numbers and binds all workspaces in between them to the specified output
 ```
 
+### `swayws s[wap]`
+```
+Swaps two workspaces with each other
+
+Usage: swayws swap <WORKSPACE> <WORKSPACE>
+```
+
 ## Examples
 ```sh
 swayws move 1 eDP-1
@@ -67,5 +75,7 @@ swayws range 11 20 eDP-1 --away --not DP-3 --not DP-5
 swayws list
 
 swayws focus 1
+
+swayws swap 4 17
 ```
 
