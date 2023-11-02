@@ -155,7 +155,12 @@ fn run() -> Result<(), SwayWsError> {
             restore_visible_workspaces = false;
         }
         Command::Swap { ws_l, ws_r } => {
-            cmd_swap(&mut connection, ws_l, ws_r)?;
+            cmd_swap(&mut connection, ws_l.clone(), ws_r.clone())?;
+            if previously_focused_workspace == Some(ws_l.clone()) {
+                previously_focused_workspace = Some(ws_r)
+            } else if previously_focused_workspace == Some(ws_r) {
+                previously_focused_workspace = Some(ws_l)
+            }
         }
     }
 
