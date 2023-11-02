@@ -1,12 +1,13 @@
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
+use snafu::prelude::*;
 use swayipc::Connection;
 use swayipc::Workspace;
 
 mod error;
 mod util;
-use error::SwayWsError;
+use error::*;
 use util::*;
 
 /// SwayWs
@@ -95,16 +96,16 @@ fn main() {
     env_logger::builder().format_timestamp(None).init();
 
     if let Err(err) = run() {
-        log::error!("{}", err);
+        log::error!("{}", report(&err));
     }
 }
 
 fn run() -> Result<(), SwayWsError> {
     let opt: SwayWs = SwayWs::parse();
 
-    let mut connection = Connection::new()?;
+    let mut connection = Connection::new().context(SwayIpcCtx)?;
 
-    let workspaces = connection.get_workspaces()?;
+    let workspaces = connection.get_workspaces().context(SwayIpcCtx)?;
 
     let mut previously_visible_workspaces: Vec<String> = vec![];
     let mut previously_focused_workspace: Option<String> = None;
@@ -230,8 +231,8 @@ fn cmd_range(
     not: Option<Vec<String>>,
 ) -> Result<(), SwayWsError> {
     if *numeric {
-        let start_i: i32 = i32::from_str(start)?;
-        let end_i: i32 = i32::from_str(end)?;
+        let start_i: i32 = i32::from_str(start).context(ParseCtx)?;
+        let end_i: i32 = i32::from_str(end).context(ParseCtx)?;
 
         for i in start_i..=end_i {
             cmd_move(connection, output_name, &i.to_string(), away, &not)?;
@@ -244,7 +245,7 @@ fn cmd_range(
     let mut fill_ws_list: bool = false;
 
     // collect workspaces between start and end in a vector
-    let workspaces: Vec<Workspace> = connection.get_workspaces()?;
+    let workspaces: Vec<Workspace> = connection.get_workspaces().context(SwayIpcCtx)?;
     for ws in workspaces.into_iter() {
         if start.cmp(&ws.name).is_eq() {
             fill_ws_list = true;
@@ -266,12 +267,14 @@ fn cmd_range(
 fn cmd_swap(connection: &mut Connection, ws_l: String, ws_r: String) -> Result<(), SwayWsError> {
     let tmp = "swayws-swap";
     let o_l = connection
-        .get_workspaces()?
+        .get_workspaces()
+        .context(SwayIpcCtx)?
         .iter()
         .find(|ws| ws.name == ws_l)
         .cloned();
     let o_r = connection
-        .get_workspaces()?
+        .get_workspaces()
+        .context(SwayIpcCtx)?
         .iter()
         .find(|ws| ws.name == ws_r)
         .cloned();

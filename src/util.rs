@@ -1,7 +1,9 @@
+use snafu::prelude::*;
 use swayipc::Connection;
 use swayipc::Workspace;
 
 use crate::error::SwayWsError;
+use crate::error::*;
 
 pub fn focus_workspace(
     connection: &mut Connection,
@@ -38,13 +40,16 @@ pub fn send_ipc_command(
     connection: &mut Connection,
     command_text: &str,
 ) -> Result<(), SwayWsError> {
-    let outcomes: Result<(), swayipc::Error> =
-        connection.run_command(command_text)?.into_iter().collect();
-    Ok(outcomes?)
+    let outcomes: Result<(), swayipc::Error> = connection
+        .run_command(command_text)
+        .context(SwayIpcCtx)?
+        .into_iter()
+        .collect();
+    outcomes.context(SwayIpcCtx)
 }
 
 pub fn print_outputs(connection: &mut Connection) -> Result<(), SwayWsError> {
-    let outputs = connection.get_outputs()?;
+    let outputs = connection.get_outputs().context(SwayIpcCtx)?;
     println!("Outputs (name):");
     for monitor in outputs.into_iter() {
         println!("{}", monitor.name);
@@ -53,7 +58,7 @@ pub fn print_outputs(connection: &mut Connection) -> Result<(), SwayWsError> {
 }
 
 pub fn print_workspaces(connection: &mut Connection) -> Result<(), SwayWsError> {
-    let workspaces: Vec<Workspace> = connection.get_workspaces()?;
+    let workspaces: Vec<Workspace> = connection.get_workspaces().context(SwayIpcCtx)?;
     println!("Workspaces (id, name):");
     let fill = match workspaces.last() {
         Some(ws) => ws.num.to_string().len(),
@@ -69,14 +74,14 @@ pub fn get_second_output(
     connection: &mut Connection,
     output_names: &[String],
 ) -> Result<swayipc::Output, SwayWsError> {
-    let outputs = connection.get_outputs()?;
+    let outputs = connection.get_outputs().context(SwayIpcCtx)?;
     if outputs.len() == 1 {
-        return Err(SwayWsError::NoOutputMatched);
+        return NoOutputMatchedCtx.fail();
     }
     outputs
         .into_iter()
         .find(|monitor| is_not_in_list(&monitor.name, output_names))
-        .ok_or(SwayWsError::NoOutputMatched)
+        .ok_or(NoOutputMatchedCtx.build())
 }
 
 pub fn is_not_in_list<V: Eq>(v: &V, list: &[V]) -> bool {

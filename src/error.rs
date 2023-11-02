@@ -1,13 +1,36 @@
-use thiserror::Error;
+use snafu::prelude::*;
+use snafu::Location;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Snafu)]
+#[snafu(context(suffix(Ctx)))]
+#[snafu(visibility(pub))]
 pub enum SwayWsError {
-    #[error("Swayipc: {0}")]
-    SwayIpc(#[from] swayipc::Error),
+    #[snafu(display("[{location}] Error while communicating with sway"))]
+    SwayIpc {
+        source: swayipc::Error,
+        location: Location,
+    },
 
-    #[error("Cannot parse {0}")]
-    ParseError(#[from] std::num::ParseIntError),
+    #[snafu(display("[{location}] Cannot parse integer"))]
+    Parse {
+        source: std::num::ParseIntError,
+        location: Location,
+    },
 
-    #[error("No output can be matched against the specified parameters")]
-    NoOutputMatched,
+    #[snafu(display("[{location}] No output can be matched against the specified parameters"))]
+    NoOutputMatched { location: Location },
+}
+
+pub(crate) fn report(error: &dyn snafu::Error) -> String {
+    let sources = snafu::ChainCompat::new(error);
+    let sources: Vec<&dyn snafu::Error> = sources.collect();
+    let sources = sources.iter().rev();
+    let mut s = String::new();
+    for (i, source) in sources.enumerate() {
+        s = match i {
+            0 => format!("{source}"),
+            _ => format!("{source} ({s})"),
+        }
+    }
+    s
 }
