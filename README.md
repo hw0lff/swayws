@@ -91,6 +91,7 @@ swayws range 11 20 eDP-1 --away --not DP-3 --not DP-5
 swayws list
 
 swayws focus 1
+swayws focus --smart 4
 
 swayws swap 4 17
 ```
