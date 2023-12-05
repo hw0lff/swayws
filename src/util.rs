@@ -59,13 +59,23 @@ pub fn print_outputs(connection: &mut Connection) -> Result<(), SwayWsError> {
 
 pub fn print_workspaces(connection: &mut Connection) -> Result<(), SwayWsError> {
     let workspaces: Vec<Workspace> = connection.get_workspaces().context(SwayIpcCtx)?;
-    println!("Workspaces (id, name):");
-    let fill = match workspaces.last() {
-        Some(ws) => ws.num.to_string().len(),
-        None => 1,
-    };
+    println!("Workspaces (id, num, name):");
+    let fill_id = workspaces
+        .iter()
+        .map(|ws| ws.id.to_string().len())
+        .max()
+        .unwrap_or(1);
+    let fill_num = workspaces
+        .iter()
+        .map(|ws| ws.num.to_string().len())
+        .max()
+        .unwrap_or(1);
+    let fill_name = workspaces.iter().map(|ws| ws.name.len()).max().unwrap_or(1);
     for ws in workspaces.into_iter() {
-        println!("{0:>width$} {1:>width$}", ws.num, ws.name, width = fill);
+        println!(
+            "{0:>fill_id$}, {1:>fill_num$}, {2:>fill_name$}",
+            ws.id, ws.num, ws.name,
+        );
     }
     Ok(())
 }
