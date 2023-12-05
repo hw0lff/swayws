@@ -64,6 +64,22 @@ Swaps two workspaces with each other
 Usage: swayws swap <WORKSPACE> <WORKSPACE>
 ```
 
+### `swayws f[ocus]`
+```
+Focus a workspace
+
+Usage: swayws focus [OPTIONS] <WORKSPACE>
+
+Arguments:
+  <WORKSPACE>  Workspace to focus
+
+Options:
+      --name   Focus the workspace by name. This is the default action if no flag is specified
+      --num    Focus the workspace by num
+      --id     Focus the workspace by id
+      --smart  Try to focus the workspace a bit smartly
+```
+
 ## Examples
 ```sh
 swayws move 1 eDP-1
