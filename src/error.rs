@@ -19,6 +19,12 @@ pub enum SwayWsError {
 
     #[snafu(display("[{location}] No output can be matched against the specified parameters"))]
     NoOutputMatched { location: Location },
+
+    #[snafu(display("[{location}] No workspace with the numerical {num} prefix could be found"))]
+    NoWorkspaceWithNum { num: i32, location: Location },
+
+    #[snafu(display("[{location}] No workspace with the id {id:?} could be found"))]
+    NoWorkspaceWithId { id: i64, location: Location },
 }
 
 pub(crate) fn report(error: &dyn snafu::Error) -> String {

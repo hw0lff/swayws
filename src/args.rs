@@ -1,4 +1,7 @@
-use clap::{Parser, Subcommand};
+use std::convert::TryFrom;
+use std::num::ParseIntError;
+
+use clap::{Args, Parser, Subcommand};
 
 /// SwayWs
 /// allows easy moving of workspaces to and from outputs
@@ -13,10 +16,7 @@ pub(crate) struct SwayWs {
 pub(crate) enum Command {
     /// Focus a workspace
     #[clap(alias = "f")]
-    Focus {
-        /// Workspace to focus
-        workspace: String,
-    },
+    Focus(Focus),
     /// Lists infos about sway
     #[clap(alias = "l")]
     List {
@@ -80,4 +80,60 @@ pub(crate) enum Command {
         #[clap(value_name = "WORKSPACE", hide = true)]
         ws_r: String,
     },
+}
+
+#[derive(Clone, Debug, Args)]
+#[clap(group = clap::ArgGroup::new("focus_by").multiple(false))]
+pub(crate) struct Focus {
+    /// Focus the workspace by name.
+    /// This is the default action if no flag is specified.
+    #[arg(long, group = "focus_by")]
+    name: bool,
+
+    /// Focus the workspace by num.
+    #[arg(long, group = "focus_by")]
+    num: bool,
+
+    /// Focus the workspace by id.
+    #[arg(long, group = "focus_by")]
+    id: bool,
+
+    /// Try to focus the workspace a bit smartly.
+    ///
+    /// By trying to find the workspace by the prefixed number first
+    /// and if there is none found, it falls back to focusing the workspace by name.
+    #[arg(long, group = "focus_by")]
+    smart: bool,
+
+    /// Workspace to focus
+    workspace: String,
+}
+
+#[derive(Debug)]
+pub(crate) enum FocusBy {
+    Name(String),
+    Num(i32),
+    Id(i64),
+    Smart(i32),
+}
+
+impl TryFrom<Focus> for FocusBy {
+    type Error = ParseIntError;
+
+    fn try_from(value: Focus) -> Result<Self, Self::Error> {
+        if value.name {
+            Ok(Self::Name(value.workspace))
+        } else if value.num {
+            Ok(Self::Num(value.workspace.parse()?))
+        } else if value.id {
+            Ok(Self::Id(value.workspace.parse()?))
+        } else if value.smart {
+            if let Ok(num) = value.workspace.parse() {
+                return Ok(Self::Smart(num));
+            }
+            Ok(Self::Name(value.workspace))
+        } else {
+            Ok(Self::Name(value.workspace))
+        }
+    }
 }

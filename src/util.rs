@@ -102,3 +102,34 @@ pub fn is_not_in_list<V: Eq>(v: &V, list: &[V]) -> bool {
     }
     true
 }
+
+pub fn focus_workspace_by_name(connection: &mut Connection, name: &str) -> Result<(), SwayWsError> {
+    focus_workspace(connection, name)
+}
+
+pub fn focus_workspace_by_num(connection: &mut Connection, num: i32) -> Result<(), SwayWsError> {
+    let workspaces: Vec<Workspace> = connection.get_workspaces().context(SwayIpcCtx)?;
+    let ws = workspaces
+        .iter()
+        .find(|ws| ws.num == num)
+        .context(NoWorkspaceWithNumCtx { num })?;
+    focus_workspace(connection, &ws.name)
+}
+
+pub fn focus_workspace_by_id(connection: &mut Connection, id: i64) -> Result<(), SwayWsError> {
+    let workspaces: Vec<Workspace> = connection.get_workspaces().context(SwayIpcCtx)?;
+    let ws = workspaces
+        .iter()
+        .find(|ws| ws.id == id)
+        .context(NoWorkspaceWithIdCtx { id })?;
+    focus_workspace(connection, &ws.name)
+}
+
+pub fn focus_workspace_smartly(connection: &mut Connection, num: i32) -> Result<(), SwayWsError> {
+    match focus_workspace_by_num(connection, num) {
+        Err(SwayWsError::NoWorkspaceWithNum { num, .. }) => {
+            focus_workspace_by_name(connection, &num.to_string())
+        }
+        res => res,
+    }
+}

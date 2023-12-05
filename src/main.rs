@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::str::FromStr;
 
 use clap::Parser;
@@ -9,7 +10,7 @@ mod args;
 mod error;
 mod util;
 
-use args::{Command, SwayWs};
+use args::{Command, FocusBy, SwayWs};
 use error::*;
 use util::*;
 
@@ -44,8 +45,9 @@ fn run() -> Result<(), SwayWsError> {
     }
 
     match opt.cmd {
-        Command::Focus { workspace } => {
-            cmd_focus(&mut connection, &workspace)?;
+        Command::Focus(focus) => {
+            let focus_by = focus.try_into().context(ParseCtx)?;
+            cmd_focus(&mut connection, focus_by)?;
             restore_visible_workspaces = false;
         }
         Command::Move {
@@ -101,8 +103,13 @@ fn run() -> Result<(), SwayWsError> {
     Ok(())
 }
 
-fn cmd_focus(connection: &mut Connection, workspace: &str) -> Result<(), SwayWsError> {
-    focus_workspace(connection, workspace)
+fn cmd_focus(connection: &mut Connection, focus_by: FocusBy) -> Result<(), SwayWsError> {
+    match focus_by {
+        FocusBy::Name(name) => focus_workspace_by_name(connection, &name),
+        FocusBy::Num(num) => focus_workspace_by_num(connection, num),
+        FocusBy::Id(id) => focus_workspace_by_id(connection, id),
+        FocusBy::Smart(num) => focus_workspace_smartly(connection, num),
+    }
 }
 
 fn cmd_list(
