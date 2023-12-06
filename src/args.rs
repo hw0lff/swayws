@@ -80,6 +80,35 @@ pub(crate) enum Command {
         #[clap(value_name = "WORKSPACE", hide = true)]
         ws_r: String,
     },
+    /// Easy virtual output management
+    #[command(subcommand, alias = "v", hide = true)]
+    Virtual(Virtual),
+}
+
+#[derive(Clone, Debug, Subcommand)]
+
+pub(crate) enum Virtual {
+    /// Create virtual outputs.
+    #[command(alias = "c")]
+    Create(VirtualCreateArgs),
+    /// Destroy virtual outputs
+    #[command(alias = "u")]
+    Unplug(VirtualUnplugArgs),
+}
+
+#[derive(Clone, Debug, Args)]
+pub(crate) struct VirtualCreateArgs {
+    /// *Warning*: Using high numbers could potentially take a while and cause some flickering and unresponsiveness.
+    /// Buckle up and get ready for some turbulences.
+    pub with_suffixes: Vec<u32>,
+}
+
+#[derive(Clone, Debug, Args)]
+pub(crate) struct VirtualUnplugArgs {
+    #[arg(long, default_value_t = false)]
+    pub all: bool,
+
+    pub output_name: Option<String>,
 }
 
 #[derive(Clone, Debug, Args)]

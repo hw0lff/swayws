@@ -7,6 +7,7 @@ use swayipc::Connection;
 use swayipc::Workspace;
 
 mod args;
+mod cmd_virtual;
 mod error;
 mod util;
 
@@ -85,6 +86,7 @@ fn run() -> Result<(), SwayWsError> {
                 previously_focused_workspace = Some(ws_l)
             }
         }
+        Command::Virtual(v) => cmd_virtual::cmd_virtual(v, &mut connection)?,
     }
 
     // Make the same workspaces visible again that were visible before rearranging the
