@@ -15,8 +15,14 @@ pub(crate) fn cmd_virtual(v: Virtual, connection: &mut Connection) -> Result<(),
 fn virtual_unplug(vua: VirtualUnplugArgs, connection: &mut Connection) -> Result<(), SwayWsError> {
     if vua.all {
         return unplug_all(connection);
+    } else if let Some(name) = vua.output_name {
+        return unplug_output(&name, connection);
     }
     Ok(())
+}
+
+fn unplug_output(name: &str, connection: &mut Connection) -> Result<(), SwayWsError> {
+    send_ipc_command(connection, &format!("output {name} unplug"))
 }
 
 fn unplug_all(connection: &mut Connection) -> Result<(), SwayWsError> {
