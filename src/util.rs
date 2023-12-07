@@ -13,6 +13,14 @@ pub fn focus_workspace(
     send_ipc_command(connection, &command_text)
 }
 
+pub fn focus_workspace_number(
+    connection: &mut Connection,
+    workspace_num: i32,
+) -> Result<(), SwayWsError> {
+    let command_text = format!("workspace number {}", workspace_num);
+    send_ipc_command(connection, &command_text)
+}
+
 pub fn move_workspace_to_output(
     connection: &mut Connection,
     workspace_name: &str,
@@ -108,12 +116,7 @@ pub fn focus_workspace_by_name(connection: &mut Connection, name: &str) -> Resul
 }
 
 pub fn focus_workspace_by_num(connection: &mut Connection, num: i32) -> Result<(), SwayWsError> {
-    let workspaces: Vec<Workspace> = connection.get_workspaces().context(SwayIpcCtx)?;
-    let ws = workspaces
-        .iter()
-        .find(|ws| ws.num == num)
-        .context(NoWorkspaceWithNumCtx { num })?;
-    focus_workspace(connection, &ws.name)
+    focus_workspace_number(connection, num)
 }
 
 pub fn focus_workspace_by_id(connection: &mut Connection, id: i64) -> Result<(), SwayWsError> {
@@ -123,13 +126,4 @@ pub fn focus_workspace_by_id(connection: &mut Connection, id: i64) -> Result<(),
         .find(|ws| ws.id == id)
         .context(NoWorkspaceWithIdCtx { id })?;
     focus_workspace(connection, &ws.name)
-}
-
-pub fn focus_workspace_smartly(connection: &mut Connection, num: i32) -> Result<(), SwayWsError> {
-    match focus_workspace_by_num(connection, num) {
-        Err(SwayWsError::NoWorkspaceWithNum { num, .. }) => {
-            focus_workspace_by_name(connection, &num.to_string())
-        }
-        res => res,
-    }
 }

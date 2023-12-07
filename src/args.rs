@@ -114,7 +114,6 @@ pub(crate) enum FocusBy {
     Name(String),
     Num(i32),
     Id(i64),
-    Smart(i32),
 }
 
 impl TryFrom<Focus> for FocusBy {
@@ -129,7 +128,7 @@ impl TryFrom<Focus> for FocusBy {
             Ok(Self::Id(value.workspace.parse()?))
         } else if value.smart {
             if let Ok(num) = value.workspace.parse() {
-                return Ok(Self::Smart(num));
+                return Ok(Self::Num(num));
             }
             Ok(Self::Name(value.workspace))
         } else {

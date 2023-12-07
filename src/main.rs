@@ -108,7 +108,6 @@ fn cmd_focus(connection: &mut Connection, focus_by: FocusBy) -> Result<(), SwayW
         FocusBy::Name(name) => focus_workspace_by_name(connection, &name),
         FocusBy::Num(num) => focus_workspace_by_num(connection, num),
         FocusBy::Id(id) => focus_workspace_by_id(connection, id),
-        FocusBy::Smart(num) => focus_workspace_smartly(connection, num),
     }
 }
 
